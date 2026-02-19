@@ -1,0 +1,39 @@
+server:
+     port: ${SERVER_PORT:8888}
+
+spring:
+     cloud:
+          gateway:
+               routes:
+                    - id: users-service
+                      uri: ${USERS_SERVICE_URL}
+                      predicates:
+                           - Path=/api/users/**
+                      filters:
+                           - name: CircuitBreaker
+                             args:
+                                  name: usersCircuitBreaker
+                                  fallbackUri: forward:/fallback/users
+
+     security:
+          oauth2:
+               resourceserver:
+                    jwt:
+                         issuer-uri: ${KEYCLOAK_ISSUER_URI}
+                         jwk-set-uri: ${KEYCLOAK_JWK_SET_URI}
+               client:
+                    registration:
+                         keycloak:
+                              client-id: sigei-gateway
+                              client-secret: ${KEYCLOAK_CLIENT_SECRET}
+                              authorization-grant-type: authorization_code
+                              scope: openid, profile, email
+                    provider:
+                         keycloak:
+                              issuer-uri: ${KEYCLOAK_ISSUER_URI}
+
+logging:
+     level:
+          pe.edu.vallegrande.sigei.gateway: WARN
+          org.springframework.cloud.gateway: WARN
+          org.springframework.security: WARN

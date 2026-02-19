@@ -1,0 +1,66 @@
+server:
+     port: ${SERVER_PORT:8888}
+
+spring:
+     application:
+          name: vg-ms-gateway
+
+     cloud:
+          gateway:
+               routes:
+                    - id: users-service
+                      uri: ${USERS_SERVICE_URL:http://localhost:9083}
+                      predicates:
+                           - Path=/api/users/**
+                      filters:
+                           - name: CircuitBreaker
+                             args:
+                                  name: usersCircuitBreaker
+                                  fallbackUri: forward:/fallback/users
+
+     security:
+          oauth2:
+               resourceserver:
+                    jwt:
+                         issuer-uri: ${KEYCLOAK_ISSUER_URI:http://localhost:8080/realms/sigei}
+                         jwk-set-uri: ${KEYCLOAK_JWK_SET_URI:http://localhost:8080/realms/sigei/protocol/openid-connect/certs}
+               client:
+                    registration:
+                         keycloak:
+                              client-id: sigei-gateway
+                              client-secret: ${KEYCLOAK_CLIENT_SECRET:sigei-gateway}
+                              authorization-grant-type: authorization_code
+                              scope: openid, profile, email
+                    provider:
+                         keycloak:
+                              issuer-uri: ${KEYCLOAK_ISSUER_URI:http://localhost:8080/realms/sigei}
+
+resilience4j:
+     circuitbreaker:
+          configs:
+               default:
+                    sliding-window-size: 10
+                    failure-rate-threshold: 50
+                    wait-duration-in-open-state: 10000
+                    permitted-number-of-calls-in-half-open-state: 3
+                    slow-call-duration-threshold: 3000
+                    slow-call-rate-threshold: 80
+          instances:
+               usersCircuitBreaker:
+                    base-config: default
+     timelimiter:
+          configs:
+               default:
+                    timeout-duration: 5s
+
+management:
+     endpoints:
+          web:
+               exposure:
+                    include: health, info, gateway
+
+logging:
+     level:
+          pe.edu.vallegrande.sigei.gateway: INFO
+          org.springframework.cloud.gateway: DEBUG
+          org.springframework.security: DEBUG

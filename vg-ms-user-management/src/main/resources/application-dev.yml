@@ -1,0 +1,22 @@
+spring:
+  r2dbc:
+    url: r2dbc:postgresql://localhost:5432/sigei_users
+    username: postgres
+    password: postgres
+
+  flyway:
+    url: jdbc:postgresql://localhost:5432/sigei_users
+    user: postgres
+    password: postgres
+
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
+
+logging:
+  level:
+    pe.edu.vallegrande.sigei.users: DEBUG
+    org.springframework.r2dbc: DEBUG
+    io.r2dbc.postgresql: DEBUG
