@@ -1,32 +1,35 @@
 spring:
-  r2dbc:
-    url: r2dbc:postgresql://${DB_HOST}:${DB_PORT:5432}/${DB_NAME}
-    username: ${DB_USERNAME}
-    password: ${DB_PASSWORD}
-    pool:
-      initial-size: 10
-      max-size: 50
-      max-idle-time: 10m
+     r2dbc:
+          url: r2dbc:postgresql://${DB_HOST}:${DB_PORT:5432}/${DB_NAME}
+          username: ${DB_USERNAME}
+          password: ${DB_PASSWORD}
+          pool:
+               initial-size: 10
+               max-size: 50
+               max-idle-time: 10m
 
-  flyway:
-    url: jdbc:postgresql://${DB_HOST}:${DB_PORT:5432}/${DB_NAME}
-    user: ${DB_USERNAME}
-    password: ${DB_PASSWORD}
+     flyway:
+          url: jdbc:postgresql://${DB_HOST}:${DB_PORT:5432}/${DB_NAME}
+          user: ${DB_USERNAME}
+          password: ${DB_PASSWORD}
 
-  rabbitmq:
-    host: ${RABBITMQ_HOST}
-    port: ${RABBITMQ_PORT:5672}
-    username: ${RABBITMQ_USERNAME}
-    password: ${RABBITMQ_PASSWORD}
+     rabbitmq:
+          host: ${RABBITMQ_HOST}
+          port: ${RABBITMQ_PORT:5672}
+          username: ${RABBITMQ_USERNAME}
+          password: ${RABBITMQ_PASSWORD}
 
 springdoc:
-  api-docs:
-    enabled: false
-  swagger-ui:
-    enabled: false
+     api-docs:
+          enabled: false
+     swagger-ui:
+          enabled: false
 
 logging:
-  level:
-    pe.edu.vallegrande.sigei.users: WARN
-    org.springframework.r2dbc: WARN
-    io.r2dbc.postgresql: WARN
+     pattern:
+          console: "%d{HH:mm:ss.SSS} %-5level [%logger{20}] %msg%n"
+     level:
+          root: WARN
+          pe.edu.vallegrande.sigei: INFO
+          org.springframework.r2dbc: WARN
+          io.r2dbc.postgresql: WARN

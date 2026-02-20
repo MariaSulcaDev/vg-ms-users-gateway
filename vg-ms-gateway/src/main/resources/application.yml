@@ -7,16 +7,18 @@ spring:
 
      cloud:
           gateway:
-               routes:
-                    - id: users-service
-                      uri: ${USERS_SERVICE_URL:http://localhost:9083}
-                      predicates:
-                           - Path=/api/users/**
-                      filters:
-                           - name: CircuitBreaker
-                             args:
-                                  name: usersCircuitBreaker
-                                  fallbackUri: forward:/fallback/users
+               server:
+                    webflux:
+                         routes:
+                              - id: users-service
+                                uri: ${USERS_SERVICE_URL:http://localhost:9083}
+                                predicates:
+                                     - Path=/api/users/**
+                                filters:
+                                     - name: CircuitBreaker
+                                       args:
+                                            name: usersCircuitBreaker
+                                            fallbackUri: forward:/fallback/users
 
      security:
           oauth2:
@@ -28,7 +30,7 @@ spring:
                     registration:
                          keycloak:
                               client-id: sigei-gateway
-                              client-secret: ${KEYCLOAK_CLIENT_SECRET:sigei-gateway}
+                              client-secret: ${KEYCLOAK_CLIENT_SECRET:I0X69RHuuXpwvsi0KUFzoZC3Eqb4opEi}
                               authorization-grant-type: authorization_code
                               scope: openid, profile, email
                     provider:

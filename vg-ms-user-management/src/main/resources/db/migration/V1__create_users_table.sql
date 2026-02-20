@@ -3,6 +3,7 @@ CREATE TABLE IF NOT EXISTS users (
     institution_id VARCHAR(36) NOT NULL,
     first_name  VARCHAR(100) NOT NULL,
     last_name   VARCHAR(100) NOT NULL,
+    mother_last_name VARCHAR(100),
     document_type VARCHAR(20) NOT NULL,
     document_number VARCHAR(15) NOT NULL,
     phone       VARCHAR(20)  NOT NULL,

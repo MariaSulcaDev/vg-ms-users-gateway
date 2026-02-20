@@ -26,6 +26,9 @@ public class UserEntity {
     @Column("last_name")
     private String lastName;
 
+    @Column("mother_last_name")
+    private String motherLastName;
+
     @Column("document_type")
     private String documentType;
 

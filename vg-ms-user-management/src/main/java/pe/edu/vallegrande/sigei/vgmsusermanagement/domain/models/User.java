@@ -17,6 +17,7 @@ public class User {
     private String institutionId;
     private String firstName;
     private String lastName;
+    private String motherLastName;
     private String documentType;
     private String documentNumber;
     private String phone;
@@ -28,4 +29,3 @@ public class User {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }
-

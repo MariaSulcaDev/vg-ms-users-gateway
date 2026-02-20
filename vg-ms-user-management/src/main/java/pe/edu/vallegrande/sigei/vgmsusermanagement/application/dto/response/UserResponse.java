@@ -17,6 +17,7 @@ public class UserResponse {
     private String institutionId;
     private String firstName;
     private String lastName;
+    private String motherLastName;
     private String documentType;
     private String documentNumber;
     private String phone;

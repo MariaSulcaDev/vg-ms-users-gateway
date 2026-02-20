@@ -4,6 +4,7 @@ import reactor.core.publisher.Mono;
 
 public interface IKeycloakClient {
     Mono<Void> createUser(String username, String password, String email,
-                          String firstName, String lastName, String role);
+            String firstName, String lastName, String role,
+            String institutionId);
 
 }

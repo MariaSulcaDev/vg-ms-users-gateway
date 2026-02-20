@@ -26,6 +26,10 @@ public class CreateUserRequest {
     private String lastName;
 
     @NotBlank
+    @Size(max = 100)
+    private String motherLastName;
+
+    @NotBlank
     @Size(max = 20)
     private String documentType;
 

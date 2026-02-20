@@ -1,0 +1,1087 @@
+{
+     "info": {
+          "_postman_id": "sigei-users-collection-2026",
+          "name": "SIGEI - Users Management (Gateway)",
+          "description": "Colección completa para el microservicio de usuarios SIGEI.\n\nFlujo:\n1. Login con Keycloak (obtener token)\n2. Admin crea Director\n3. Director crea SubDirector, Secretaria\n4. SubDirector crea Docentes, Auxiliares, Psicólogo\n5. Secretaria registra Padres, Madres, Apoderados\n\n⚠️ En perfil DEV no se necesita token (permitAll).\n⚠️ En perfil PROD se requiere token JWT válido.\n\nInstitución de prueba: a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+          "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+     },
+     "variable": [
+          {
+               "key": "gateway_url",
+               "value": "http://localhost:8888",
+               "type": "string"
+          },
+          {
+               "key": "users_direct_url",
+               "value": "http://localhost:9083",
+               "type": "string"
+          },
+          {
+               "key": "keycloak_url",
+               "value": "http://localhost:8080",
+               "type": "string"
+          },
+          {
+               "key": "realm",
+               "value": "sigei",
+               "type": "string"
+          },
+          {
+               "key": "client_id",
+               "value": "sigei-gateway",
+               "type": "string"
+          },
+          {
+               "key": "client_secret",
+               "value": "I0X69RHuuXpwvsi0KUFzoZC3Eqb4opEi",
+               "type": "string"
+          },
+          {
+               "key": "institution_id",
+               "value": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+               "type": "string"
+          },
+          {
+               "key": "access_token",
+               "value": "",
+               "type": "string"
+          },
+          {
+               "key": "refresh_token",
+               "value": "",
+               "type": "string"
+          },
+          {
+               "key": "director_token",
+               "value": "",
+               "type": "string"
+          },
+          {
+               "key": "subdirector_token",
+               "value": "",
+               "type": "string"
+          },
+          {
+               "key": "secretaria_token",
+               "value": "",
+               "type": "string"
+          },
+          {
+               "key": "director_id",
+               "value": "",
+               "type": "string"
+          },
+          {
+               "key": "subdirector_id",
+               "value": "",
+               "type": "string"
+          },
+          {
+               "key": "secretaria_id",
+               "value": "",
+               "type": "string"
+          },
+          {
+               "key": "docente1_id",
+               "value": "",
+               "type": "string"
+          },
+          {
+               "key": "auxiliar_id",
+               "value": "",
+               "type": "string"
+          },
+          {
+               "key": "psicologo_id",
+               "value": "",
+               "type": "string"
+          }
+     ],
+     "item": [
+          {
+               "name": "🔐 1. Autenticación",
+               "item": [
+                    {
+                         "name": "1.1 Login Admin (Password Grant)",
+                         "event": [
+                              {
+                                   "listen": "test",
+                                   "script": {
+                                        "exec": [
+                                             "var jsonData = pm.response.json();",
+                                             "if (jsonData.access_token) {",
+                                             "    pm.collectionVariables.set('access_token', jsonData.access_token);",
+                                             "    pm.collectionVariables.set('refresh_token', jsonData.refresh_token);",
+                                             "    pm.test('Login exitoso - Token obtenido', function() {",
+                                             "        pm.response.to.have.status(200);",
+                                             "    });",
+                                             "    // Decodificar token para ver claims",
+                                             "    var payload = JSON.parse(atob(jsonData.access_token.split('.')[1]));",
+                                             "    console.log('Claims del token:', JSON.stringify(payload, null, 2));",
+                                             "    console.log('Roles:', payload.realm_access?.roles);",
+                                             "    console.log('InstitutionId:', payload.institutionId);",
+                                             "}"
+                                        ],
+                                        "type": "text/javascript"
+                                   }
+                              }
+                         ],
+                         "request": {
+                              "method": "POST",
+                              "header": [
+                                   {
+                                        "key": "Content-Type",
+                                        "value": "application/x-www-form-urlencoded"
+                                   }
+                              ],
+                              "body": {
+                                   "mode": "urlencoded",
+                                   "urlencoded": [
+                                        { "key": "grant_type", "value": "password" },
+                                        { "key": "client_id", "value": "{{client_id}}" },
+                                        { "key": "client_secret", "value": "{{client_secret}}" },
+                                        { "key": "username", "value": "director.sigei@sigei.edu.pe" },
+                                        { "key": "password", "value": "12345678" }
+                                   ]
+                              },
+                              "url": {
+                                   "raw": "{{keycloak_url}}/realms/{{realm}}/protocol/openid-connect/token",
+                                   "host": [ "{{keycloak_url}}" ],
+                                   "path": [ "realms", "{{realm}}", "protocol", "openid-connect", "token" ]
+                              }
+                         }
+                    },
+                    {
+                         "name": "1.2 Refresh Token",
+                         "event": [
+                              {
+                                   "listen": "test",
+                                   "script": {
+                                        "exec": [
+                                             "var jsonData = pm.response.json();",
+                                             "if (jsonData.access_token) {",
+                                             "    pm.collectionVariables.set('access_token', jsonData.access_token);",
+                                             "    pm.collectionVariables.set('refresh_token', jsonData.refresh_token);",
+                                             "    pm.test('Token renovado', function() {",
+                                             "        pm.response.to.have.status(200);",
+                                             "    });",
+                                             "}"
+                                        ],
+                                        "type": "text/javascript"
+                                   }
+                              }
+                         ],
+                         "request": {
+                              "method": "POST",
+                              "header": [
+                                   {
+                                        "key": "Content-Type",
+                                        "value": "application/x-www-form-urlencoded"
+                                   }
+                              ],
+                              "body": {
+                                   "mode": "urlencoded",
+                                   "urlencoded": [
+                                        { "key": "grant_type", "value": "refresh_token" },
+                                        { "key": "client_id", "value": "{{client_id}}" },
+                                        { "key": "client_secret", "value": "{{client_secret}}" },
+                                        { "key": "refresh_token", "value": "{{refresh_token}}" }
+                                   ]
+                              },
+                              "url": {
+                                   "raw": "{{keycloak_url}}/realms/{{realm}}/protocol/openid-connect/token",
+                                   "host": [ "{{keycloak_url}}" ],
+                                   "path": [ "realms", "{{realm}}", "protocol", "openid-connect", "token" ]
+                              }
+                         }
+                    },
+                    {
+                         "name": "1.3 Introspect Token (Ver claims)",
+                         "request": {
+                              "method": "POST",
+                              "header": [
+                                   {
+                                        "key": "Content-Type",
+                                        "value": "application/x-www-form-urlencoded"
+                                   }
+                              ],
+                              "body": {
+                                   "mode": "urlencoded",
+                                   "urlencoded": [
+                                        { "key": "token", "value": "{{access_token}}" },
+                                        { "key": "client_id", "value": "{{client_id}}" },
+                                        { "key": "client_secret", "value": "{{client_secret}}" }
+                                   ]
+                              },
+                              "url": {
+                                   "raw": "{{keycloak_url}}/realms/{{realm}}/protocol/openid-connect/token/introspect",
+                                   "host": [ "{{keycloak_url}}" ],
+                                   "path": [ "realms", "{{realm}}", "protocol", "openid-connect", "token", "introspect" ]
+                              }
+                         }
+                    },
+                    {
+                         "name": "1.4 UserInfo (datos del usuario logueado)",
+                         "request": {
+                              "method": "GET",
+                              "header": [
+                                   {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{access_token}}"
+                                   }
+                              ],
+                              "url": {
+                                   "raw": "{{keycloak_url}}/realms/{{realm}}/protocol/openid-connect/userinfo",
+                                   "host": [ "{{keycloak_url}}" ],
+                                   "path": [ "realms", "{{realm}}", "protocol", "openid-connect", "userinfo" ]
+                              }
+                         }
+                    },
+                    {
+                         "name": "1.5 Logout",
+                         "request": {
+                              "method": "POST",
+                              "header": [
+                                   {
+                                        "key": "Content-Type",
+                                        "value": "application/x-www-form-urlencoded"
+                                   }
+                              ],
+                              "body": {
+                                   "mode": "urlencoded",
+                                   "urlencoded": [
+                                        { "key": "client_id", "value": "{{client_id}}" },
+                                        { "key": "client_secret", "value": "{{client_secret}}" },
+                                        { "key": "refresh_token", "value": "{{refresh_token}}" }
+                                   ]
+                              },
+                              "url": {
+                                   "raw": "{{keycloak_url}}/realms/{{realm}}/protocol/openid-connect/logout",
+                                   "host": [ "{{keycloak_url}}" ],
+                                   "path": [ "realms", "{{realm}}", "protocol", "openid-connect", "logout" ]
+                              }
+                         }
+                    }
+               ]
+          },
+          {
+               "name": "👨‍💼 2. Admin crea Director",
+               "item": [
+                    {
+                         "name": "2.1 Crear Director - Carlos López Mendoza",
+                         "event": [
+                              {
+                                   "listen": "test",
+                                   "script": {
+                                        "exec": [
+                                             "var jsonData = pm.response.json();",
+                                             "if (jsonData.data && jsonData.data.id) {",
+                                             "    pm.collectionVariables.set('director_id', jsonData.data.id);",
+                                             "    pm.test('Director creado', function() {",
+                                             "        pm.response.to.have.status(201);",
+                                             "        pm.expect(jsonData.data.role).to.equal('DIRECTOR');",
+                                             "        pm.expect(jsonData.data.userName).to.include('@sigei.gob.pe');",
+                                             "    });",
+                                             "    console.log('Director username:', jsonData.data.userName);",
+                                             "    console.log('Director ID:', jsonData.data.id);",
+                                             "}"
+                                        ],
+                                        "type": "text/javascript"
+                                   }
+                              }
+                         ],
+                         "request": {
+                              "method": "POST",
+                              "header": [
+                                   { "key": "Content-Type", "value": "application/json" },
+                                   { "key": "Authorization", "value": "Bearer {{access_token}}" }
+                              ],
+                              "body": {
+                                   "mode": "raw",
+                                   "raw": "{\n    \"institutionId\": \"{{institution_id}}\",\n    \"firstName\": \"Carlos\",\n    \"lastName\": \"López\",\n    \"motherLastName\": \"Mendoza\",\n    \"documentType\": \"DNI\",\n    \"documentNumber\": \"70123456\",\n    \"phone\": \"987654321\",\n    \"address\": \"Av. Principal 123, Lima\",\n    \"email\": \"carlos.lopez@correo.pe\",\n    \"role\": \"DIRECTOR\"\n}"
+                              },
+                              "url": {
+                                   "raw": "{{gateway_url}}/api/users",
+                                   "host": [ "{{gateway_url}}" ],
+                                   "path": [ "api", "users" ]
+                              }
+                         }
+                    },
+                    {
+                         "name": "2.2 Login como Director",
+                         "event": [
+                              {
+                                   "listen": "test",
+                                   "script": {
+                                        "exec": [
+                                             "var jsonData = pm.response.json();",
+                                             "if (jsonData.access_token) {",
+                                             "    pm.collectionVariables.set('director_token', jsonData.access_token);",
+                                             "    pm.test('Login Director exitoso', function() {",
+                                             "        pm.response.to.have.status(200);",
+                                             "    });",
+                                             "    var payload = JSON.parse(atob(jsonData.access_token.split('.')[1]));",
+                                             "    console.log('Director InstitutionId:', payload.institutionId);",
+                                             "    console.log('Director Roles:', payload.realm_access?.roles);",
+                                             "}"
+                                        ],
+                                        "type": "text/javascript"
+                                   }
+                              }
+                         ],
+                         "request": {
+                              "method": "POST",
+                              "header": [
+                                   { "key": "Content-Type", "value": "application/x-www-form-urlencoded" }
+                              ],
+                              "body": {
+                                   "mode": "urlencoded",
+                                   "urlencoded": [
+                                        { "key": "grant_type", "value": "password" },
+                                        { "key": "client_id", "value": "{{client_id}}" },
+                                        { "key": "client_secret", "value": "{{client_secret}}" },
+                                        { "key": "username", "value": "carlos.lopez@sigei.gob.pe" },
+                                        { "key": "password", "value": "70123456" }
+                                   ]
+                              },
+                              "url": {
+                                   "raw": "{{keycloak_url}}/realms/{{realm}}/protocol/openid-connect/token",
+                                   "host": [ "{{keycloak_url}}" ],
+                                   "path": [ "realms", "{{realm}}", "protocol", "openid-connect", "token" ]
+                              }
+                         }
+                    }
+               ]
+          },
+          {
+               "name": "📋 3. Director crea SubDirector y Secretaria",
+               "item": [
+                    {
+                         "name": "3.1 Crear SubDirector - Ana García Quispe",
+                         "event": [
+                              {
+                                   "listen": "test",
+                                   "script": {
+                                        "exec": [
+                                             "var jsonData = pm.response.json();",
+                                             "if (jsonData.data && jsonData.data.id) {",
+                                             "    pm.collectionVariables.set('subdirector_id', jsonData.data.id);",
+                                             "    pm.test('SubDirector creado', function() {",
+                                             "        pm.response.to.have.status(201);",
+                                             "        pm.expect(jsonData.data.role).to.equal('SUBDIRECTOR');",
+                                             "    });",
+                                             "    console.log('SubDirector username:', jsonData.data.userName);",
+                                             "}"
+                                        ],
+                                        "type": "text/javascript"
+                                   }
+                              }
+                         ],
+                         "request": {
+                              "method": "POST",
+                              "header": [
+                                   { "key": "Content-Type", "value": "application/json" },
+                                   { "key": "Authorization", "value": "Bearer {{director_token}}" }
+                              ],
+                              "body": {
+                                   "mode": "raw",
+                                   "raw": "{\n    \"institutionId\": \"{{institution_id}}\",\n    \"firstName\": \"Ana María\",\n    \"lastName\": \"García\",\n    \"motherLastName\": \"Quispe\",\n    \"documentType\": \"DNI\",\n    \"documentNumber\": \"71234567\",\n    \"phone\": \"976543210\",\n    \"address\": \"Jr. Los Olivos 456, Lima\",\n    \"email\": \"ana.garcia@correo.pe\",\n    \"role\": \"SUBDIRECTOR\"\n}"
+                              },
+                              "url": {
+                                   "raw": "{{gateway_url}}/api/users",
+                                   "host": [ "{{gateway_url}}" ],
+                                   "path": [ "api", "users" ]
+                              }
+                         }
+                    },
+                    {
+                         "name": "3.2 Crear Secretaria - Rosa Huamán Torres",
+                         "event": [
+                              {
+                                   "listen": "test",
+                                   "script": {
+                                        "exec": [
+                                             "var jsonData = pm.response.json();",
+                                             "if (jsonData.data && jsonData.data.id) {",
+                                             "    pm.collectionVariables.set('secretaria_id', jsonData.data.id);",
+                                             "    pm.test('Secretaria creada', function() {",
+                                             "        pm.response.to.have.status(201);",
+                                             "        pm.expect(jsonData.data.role).to.equal('SECRETARIA');",
+                                             "    });",
+                                             "    console.log('Secretaria username:', jsonData.data.userName);",
+                                             "}"
+                                        ],
+                                        "type": "text/javascript"
+                                   }
+                              }
+                         ],
+                         "request": {
+                              "method": "POST",
+                              "header": [
+                                   { "key": "Content-Type", "value": "application/json" },
+                                   { "key": "Authorization", "value": "Bearer {{director_token}}" }
+                              ],
+                              "body": {
+                                   "mode": "raw",
+                                   "raw": "{\n    \"institutionId\": \"{{institution_id}}\",\n    \"firstName\": \"Rosa\",\n    \"lastName\": \"Huamán\",\n    \"motherLastName\": \"Torres\",\n    \"documentType\": \"DNI\",\n    \"documentNumber\": \"72345678\",\n    \"phone\": \"965432109\",\n    \"address\": \"Calle Las Flores 789, Lima\",\n    \"email\": \"rosa.huaman@correo.pe\",\n    \"role\": \"SECRETARIA\"\n}"
+                              },
+                              "url": {
+                                   "raw": "{{gateway_url}}/api/users",
+                                   "host": [ "{{gateway_url}}" ],
+                                   "path": [ "api", "users" ]
+                              }
+                         }
+                    },
+                    {
+                         "name": "3.3 Login como SubDirector",
+                         "event": [
+                              {
+                                   "listen": "test",
+                                   "script": {
+                                        "exec": [
+                                             "var jsonData = pm.response.json();",
+                                             "if (jsonData.access_token) {",
+                                             "    pm.collectionVariables.set('subdirector_token', jsonData.access_token);",
+                                             "    pm.test('Login SubDirector exitoso', function() {",
+                                             "        pm.response.to.have.status(200);",
+                                             "    });",
+                                             "}"
+                                        ],
+                                        "type": "text/javascript"
+                                   }
+                              }
+                         ],
+                         "request": {
+                              "method": "POST",
+                              "header": [
+                                   { "key": "Content-Type", "value": "application/x-www-form-urlencoded" }
+                              ],
+                              "body": {
+                                   "mode": "urlencoded",
+                                   "urlencoded": [
+                                        { "key": "grant_type", "value": "password" },
+                                        { "key": "client_id", "value": "{{client_id}}" },
+                                        { "key": "client_secret", "value": "{{client_secret}}" },
+                                        { "key": "username", "value": "ana.garcia@sigei.gob.pe" },
+                                        { "key": "password", "value": "71234567" }
+                                   ]
+                              },
+                              "url": {
+                                   "raw": "{{keycloak_url}}/realms/{{realm}}/protocol/openid-connect/token",
+                                   "host": [ "{{keycloak_url}}" ],
+                                   "path": [ "realms", "{{realm}}", "protocol", "openid-connect", "token" ]
+                              }
+                         }
+                    },
+                    {
+                         "name": "3.4 Login como Secretaria",
+                         "event": [
+                              {
+                                   "listen": "test",
+                                   "script": {
+                                        "exec": [
+                                             "var jsonData = pm.response.json();",
+                                             "if (jsonData.access_token) {",
+                                             "    pm.collectionVariables.set('secretaria_token', jsonData.access_token);",
+                                             "    pm.test('Login Secretaria exitoso', function() {",
+                                             "        pm.response.to.have.status(200);",
+                                             "    });",
+                                             "}"
+                                        ],
+                                        "type": "text/javascript"
+                                   }
+                              }
+                         ],
+                         "request": {
+                              "method": "POST",
+                              "header": [
+                                   { "key": "Content-Type", "value": "application/x-www-form-urlencoded" }
+                              ],
+                              "body": {
+                                   "mode": "urlencoded",
+                                   "urlencoded": [
+                                        { "key": "grant_type", "value": "password" },
+                                        { "key": "client_id", "value": "{{client_id}}" },
+                                        { "key": "client_secret", "value": "{{client_secret}}" },
+                                        { "key": "username", "value": "rosa.huaman@sigei.gob.pe" },
+                                        { "key": "password", "value": "72345678" }
+                                   ]
+                              },
+                              "url": {
+                                   "raw": "{{keycloak_url}}/realms/{{realm}}/protocol/openid-connect/token",
+                                   "host": [ "{{keycloak_url}}" ],
+                                   "path": [ "realms", "{{realm}}", "protocol", "openid-connect", "token" ]
+                              }
+                         }
+                    }
+               ]
+          },
+          {
+               "name": "👨‍🏫 4. SubDirector crea Docentes, Auxiliar, Psicólogo",
+               "item": [
+                    {
+                         "name": "4.1 Crear Docente 1 - María Sulca Benites",
+                         "event": [
+                              {
+                                   "listen": "test",
+                                   "script": {
+                                        "exec": [
+                                             "var jsonData = pm.response.json();",
+                                             "if (jsonData.data && jsonData.data.id) {",
+                                             "    pm.collectionVariables.set('docente1_id', jsonData.data.id);",
+                                             "    pm.test('Docente 1 creado', function() {",
+                                             "        pm.response.to.have.status(201);",
+                                             "        pm.expect(jsonData.data.role).to.equal('DOCENTE');",
+                                             "    });",
+                                             "    console.log('Docente 1 username:', jsonData.data.userName);",
+                                             "}"
+                                        ],
+                                        "type": "text/javascript"
+                                   }
+                              }
+                         ],
+                         "request": {
+                              "method": "POST",
+                              "header": [
+                                   { "key": "Content-Type", "value": "application/json" },
+                                   { "key": "Authorization", "value": "Bearer {{subdirector_token}}" }
+                              ],
+                              "body": {
+                                   "mode": "raw",
+                                   "raw": "{\n    \"institutionId\": \"{{institution_id}}\",\n    \"firstName\": \"María\",\n    \"lastName\": \"Sulca\",\n    \"motherLastName\": \"Benites\",\n    \"documentType\": \"DNI\",\n    \"documentNumber\": \"73456789\",\n    \"phone\": \"954321098\",\n    \"address\": \"Av. Universitaria 1010, Lima\",\n    \"email\": \"maria.sulca@correo.pe\",\n    \"role\": \"DOCENTE\"\n}"
+                              },
+                              "url": {
+                                   "raw": "{{gateway_url}}/api/users",
+                                   "host": [ "{{gateway_url}}" ],
+                                   "path": [ "api", "users" ]
+                              }
+                         }
+                    },
+                    {
+                         "name": "4.2 Crear Docente 2 - Pedro Ramírez Vega",
+                         "event": [
+                              {
+                                   "listen": "test",
+                                   "script": {
+                                        "exec": [
+                                             "var jsonData = pm.response.json();",
+                                             "if (jsonData.data) {",
+                                             "    pm.test('Docente 2 creado', function() {",
+                                             "        pm.response.to.have.status(201);",
+                                             "        pm.expect(jsonData.data.role).to.equal('DOCENTE');",
+                                             "    });",
+                                             "}"
+                                        ],
+                                        "type": "text/javascript"
+                                   }
+                              }
+                         ],
+                         "request": {
+                              "method": "POST",
+                              "header": [
+                                   { "key": "Content-Type", "value": "application/json" },
+                                   { "key": "Authorization", "value": "Bearer {{subdirector_token}}" }
+                              ],
+                              "body": {
+                                   "mode": "raw",
+                                   "raw": "{\n    \"institutionId\": \"{{institution_id}}\",\n    \"firstName\": \"Pedro\",\n    \"lastName\": \"Ramírez\",\n    \"motherLastName\": \"Vega\",\n    \"documentType\": \"DNI\",\n    \"documentNumber\": \"74567890\",\n    \"phone\": \"943210987\",\n    \"address\": \"Jr. Libertad 234, Lima\",\n    \"email\": \"pedro.ramirez@correo.pe\",\n    \"role\": \"DOCENTE\"\n}"
+                              },
+                              "url": {
+                                   "raw": "{{gateway_url}}/api/users",
+                                   "host": [ "{{gateway_url}}" ],
+                                   "path": [ "api", "users" ]
+                              }
+                         }
+                    },
+                    {
+                         "name": "4.3 Crear Docente 3 - Lucía Fernández Castro",
+                         "event": [
+                              {
+                                   "listen": "test",
+                                   "script": {
+                                        "exec": [
+                                             "var jsonData = pm.response.json();",
+                                             "if (jsonData.data) {",
+                                             "    pm.test('Docente 3 creado', function() {",
+                                             "        pm.response.to.have.status(201);",
+                                             "        pm.expect(jsonData.data.role).to.equal('DOCENTE');",
+                                             "    });",
+                                             "}"
+                                        ],
+                                        "type": "text/javascript"
+                                   }
+                              }
+                         ],
+                         "request": {
+                              "method": "POST",
+                              "header": [
+                                   { "key": "Content-Type", "value": "application/json" },
+                                   { "key": "Authorization", "value": "Bearer {{subdirector_token}}" }
+                              ],
+                              "body": {
+                                   "mode": "raw",
+                                   "raw": "{\n    \"institutionId\": \"{{institution_id}}\",\n    \"firstName\": \"Lucía\",\n    \"lastName\": \"Fernández\",\n    \"motherLastName\": \"Castro\",\n    \"documentType\": \"DNI\",\n    \"documentNumber\": \"75678901\",\n    \"phone\": \"932109876\",\n    \"address\": \"Calle San Martín 567, Lima\",\n    \"email\": \"lucia.fernandez@correo.pe\",\n    \"role\": \"DOCENTE\"\n}"
+                              },
+                              "url": {
+                                   "raw": "{{gateway_url}}/api/users",
+                                   "host": [ "{{gateway_url}}" ],
+                                   "path": [ "api", "users" ]
+                              }
+                         }
+                    },
+                    {
+                         "name": "4.4 Crear Auxiliar - Jorge Espinoza Paredes",
+                         "event": [
+                              {
+                                   "listen": "test",
+                                   "script": {
+                                        "exec": [
+                                             "var jsonData = pm.response.json();",
+                                             "if (jsonData.data && jsonData.data.id) {",
+                                             "    pm.collectionVariables.set('auxiliar_id', jsonData.data.id);",
+                                             "    pm.test('Auxiliar creado', function() {",
+                                             "        pm.response.to.have.status(201);",
+                                             "        pm.expect(jsonData.data.role).to.equal('AUXILIAR');",
+                                             "    });",
+                                             "}"
+                                        ],
+                                        "type": "text/javascript"
+                                   }
+                              }
+                         ],
+                         "request": {
+                              "method": "POST",
+                              "header": [
+                                   { "key": "Content-Type", "value": "application/json" },
+                                   { "key": "Authorization", "value": "Bearer {{subdirector_token}}" }
+                              ],
+                              "body": {
+                                   "mode": "raw",
+                                   "raw": "{\n    \"institutionId\": \"{{institution_id}}\",\n    \"firstName\": \"Jorge\",\n    \"lastName\": \"Espinoza\",\n    \"motherLastName\": \"Paredes\",\n    \"documentType\": \"DNI\",\n    \"documentNumber\": \"76789012\",\n    \"phone\": \"921098765\",\n    \"address\": \"Av. Bolívar 890, Lima\",\n    \"email\": \"jorge.espinoza@correo.pe\",\n    \"role\": \"AUXILIAR\"\n}"
+                              },
+                              "url": {
+                                   "raw": "{{gateway_url}}/api/users",
+                                   "host": [ "{{gateway_url}}" ],
+                                   "path": [ "api", "users" ]
+                              }
+                         }
+                    },
+                    {
+                         "name": "4.5 Crear Psicólogo - Carmen Rojas Delgado",
+                         "event": [
+                              {
+                                   "listen": "test",
+                                   "script": {
+                                        "exec": [
+                                             "var jsonData = pm.response.json();",
+                                             "if (jsonData.data && jsonData.data.id) {",
+                                             "    pm.collectionVariables.set('psicologo_id', jsonData.data.id);",
+                                             "    pm.test('Psicólogo creado', function() {",
+                                             "        pm.response.to.have.status(201);",
+                                             "        pm.expect(jsonData.data.role).to.equal('PSICOLOGO');",
+                                             "    });",
+                                             "}"
+                                        ],
+                                        "type": "text/javascript"
+                                   }
+                              }
+                         ],
+                         "request": {
+                              "method": "POST",
+                              "header": [
+                                   { "key": "Content-Type", "value": "application/json" },
+                                   { "key": "Authorization", "value": "Bearer {{subdirector_token}}" }
+                              ],
+                              "body": {
+                                   "mode": "raw",
+                                   "raw": "{\n    \"institutionId\": \"{{institution_id}}\",\n    \"firstName\": \"Carmen\",\n    \"lastName\": \"Rojas\",\n    \"motherLastName\": \"Delgado\",\n    \"documentType\": \"DNI\",\n    \"documentNumber\": \"77890123\",\n    \"phone\": \"910987654\",\n    \"address\": \"Jr. Cusco 345, Lima\",\n    \"email\": \"carmen.rojas@correo.pe\",\n    \"role\": \"PSICOLOGO\"\n}"
+                              },
+                              "url": {
+                                   "raw": "{{gateway_url}}/api/users",
+                                   "host": [ "{{gateway_url}}" ],
+                                   "path": [ "api", "users" ]
+                              }
+                         }
+                    }
+               ]
+          },
+          {
+               "name": "👪 5. Secretaria registra Padres, Madres, Apoderados",
+               "item": [
+                    {
+                         "name": "5.1 Registrar Padre - Roberto Chávez Flores",
+                         "event": [
+                              {
+                                   "listen": "test",
+                                   "script": {
+                                        "exec": [
+                                             "var jsonData = pm.response.json();",
+                                             "if (jsonData.data) {",
+                                             "    pm.test('Padre registrado', function() {",
+                                             "        pm.response.to.have.status(201);",
+                                             "        pm.expect(jsonData.data.role).to.equal('PADRE');",
+                                             "    });",
+                                             "}"
+                                        ],
+                                        "type": "text/javascript"
+                                   }
+                              }
+                         ],
+                         "request": {
+                              "method": "POST",
+                              "header": [
+                                   { "key": "Content-Type", "value": "application/json" },
+                                   { "key": "Authorization", "value": "Bearer {{secretaria_token}}" }
+                              ],
+                              "body": {
+                                   "mode": "raw",
+                                   "raw": "{\n    \"institutionId\": \"{{institution_id}}\",\n    \"firstName\": \"Roberto\",\n    \"lastName\": \"Chávez\",\n    \"motherLastName\": \"Flores\",\n    \"documentType\": \"DNI\",\n    \"documentNumber\": \"40123456\",\n    \"phone\": \"999888777\",\n    \"address\": \"Av. Arequipa 1234, Lima\",\n    \"email\": \"roberto.chavez@gmail.com\",\n    \"role\": \"PADRE\"\n}"
+                              },
+                              "url": {
+                                   "raw": "{{gateway_url}}/api/users",
+                                   "host": [ "{{gateway_url}}" ],
+                                   "path": [ "api", "users" ]
+                              }
+                         }
+                    },
+                    {
+                         "name": "5.2 Registrar Madre - Patricia Morales Soto",
+                         "event": [
+                              {
+                                   "listen": "test",
+                                   "script": {
+                                        "exec": [
+                                             "var jsonData = pm.response.json();",
+                                             "if (jsonData.data) {",
+                                             "    pm.test('Madre registrada', function() {",
+                                             "        pm.response.to.have.status(201);",
+                                             "        pm.expect(jsonData.data.role).to.equal('MADRE');",
+                                             "    });",
+                                             "}"
+                                        ],
+                                        "type": "text/javascript"
+                                   }
+                              }
+                         ],
+                         "request": {
+                              "method": "POST",
+                              "header": [
+                                   { "key": "Content-Type", "value": "application/json" },
+                                   { "key": "Authorization", "value": "Bearer {{secretaria_token}}" }
+                              ],
+                              "body": {
+                                   "mode": "raw",
+                                   "raw": "{\n    \"institutionId\": \"{{institution_id}}\",\n    \"firstName\": \"Patricia\",\n    \"lastName\": \"Morales\",\n    \"motherLastName\": \"Soto\",\n    \"documentType\": \"DNI\",\n    \"documentNumber\": \"41234567\",\n    \"phone\": \"998877666\",\n    \"address\": \"Calle Los Jazmines 567, Lima\",\n    \"email\": \"patricia.morales@gmail.com\",\n    \"role\": \"MADRE\"\n}"
+                              },
+                              "url": {
+                                   "raw": "{{gateway_url}}/api/users",
+                                   "host": [ "{{gateway_url}}" ],
+                                   "path": [ "api", "users" ]
+                              }
+                         }
+                    },
+                    {
+                         "name": "5.3 Registrar Apoderado - Miguel Torres Vargas",
+                         "event": [
+                              {
+                                   "listen": "test",
+                                   "script": {
+                                        "exec": [
+                                             "var jsonData = pm.response.json();",
+                                             "if (jsonData.data) {",
+                                             "    pm.test('Apoderado registrado', function() {",
+                                             "        pm.response.to.have.status(201);",
+                                             "        pm.expect(jsonData.data.role).to.equal('APODERADO');",
+                                             "    });",
+                                             "}"
+                                        ],
+                                        "type": "text/javascript"
+                                   }
+                              }
+                         ],
+                         "request": {
+                              "method": "POST",
+                              "header": [
+                                   { "key": "Content-Type", "value": "application/json" },
+                                   { "key": "Authorization", "value": "Bearer {{secretaria_token}}" }
+                              ],
+                              "body": {
+                                   "mode": "raw",
+                                   "raw": "{\n    \"institutionId\": \"{{institution_id}}\",\n    \"firstName\": \"Miguel Ángel\",\n    \"lastName\": \"Torres\",\n    \"motherLastName\": \"Vargas\",\n    \"documentType\": \"DNI\",\n    \"documentNumber\": \"42345678\",\n    \"phone\": \"997766555\",\n    \"address\": \"Jr. Huancayo 890, Lima\",\n    \"email\": \"miguel.torres@gmail.com\",\n    \"role\": \"APODERADO\"\n}"
+                              },
+                              "url": {
+                                   "raw": "{{gateway_url}}/api/users",
+                                   "host": [ "{{gateway_url}}" ],
+                                   "path": [ "api", "users" ]
+                              }
+                         }
+                    },
+                    {
+                         "name": "5.4 Registrar Madre 2 - Elena Ríos Campos",
+                         "event": [
+                              {
+                                   "listen": "test",
+                                   "script": {
+                                        "exec": [
+                                             "var jsonData = pm.response.json();",
+                                             "if (jsonData.data) {",
+                                             "    pm.test('Madre 2 registrada', function() {",
+                                             "        pm.response.to.have.status(201);",
+                                             "        pm.expect(jsonData.data.role).to.equal('MADRE');",
+                                             "    });",
+                                             "}"
+                                        ],
+                                        "type": "text/javascript"
+                                   }
+                              }
+                         ],
+                         "request": {
+                              "method": "POST",
+                              "header": [
+                                   { "key": "Content-Type", "value": "application/json" },
+                                   { "key": "Authorization", "value": "Bearer {{secretaria_token}}" }
+                              ],
+                              "body": {
+                                   "mode": "raw",
+                                   "raw": "{\n    \"institutionId\": \"{{institution_id}}\",\n    \"firstName\": \"Elena\",\n    \"lastName\": \"Ríos\",\n    \"motherLastName\": \"Campos\",\n    \"documentType\": \"DNI\",\n    \"documentNumber\": \"43456789\",\n    \"phone\": \"996655444\",\n    \"address\": \"Av. La Marina 1567, Lima\",\n    \"email\": \"elena.rios@gmail.com\",\n    \"role\": \"MADRE\"\n}"
+                              },
+                              "url": {
+                                   "raw": "{{gateway_url}}/api/users",
+                                   "host": [ "{{gateway_url}}" ],
+                                   "path": [ "api", "users" ]
+                              }
+                         }
+                    },
+                    {
+                         "name": "5.5 Registrar Padre 2 - Fernando Díaz Peña",
+                         "event": [
+                              {
+                                   "listen": "test",
+                                   "script": {
+                                        "exec": [
+                                             "var jsonData = pm.response.json();",
+                                             "if (jsonData.data) {",
+                                             "    pm.test('Padre 2 registrado', function() {",
+                                             "        pm.response.to.have.status(201);",
+                                             "        pm.expect(jsonData.data.role).to.equal('PADRE');",
+                                             "    });",
+                                             "}"
+                                        ],
+                                        "type": "text/javascript"
+                                   }
+                              }
+                         ],
+                         "request": {
+                              "method": "POST",
+                              "header": [
+                                   { "key": "Content-Type", "value": "application/json" },
+                                   { "key": "Authorization", "value": "Bearer {{secretaria_token}}" }
+                              ],
+                              "body": {
+                                   "mode": "raw",
+                                   "raw": "{\n    \"institutionId\": \"{{institution_id}}\",\n    \"firstName\": \"Fernando\",\n    \"lastName\": \"Díaz\",\n    \"motherLastName\": \"Peña\",\n    \"documentType\": \"DNI\",\n    \"documentNumber\": \"44567890\",\n    \"phone\": \"995544333\",\n    \"address\": \"Calle Tacna 234, Lima\",\n    \"email\": \"fernando.diaz@gmail.com\",\n    \"role\": \"PADRE\"\n}"
+                              },
+                              "url": {
+                                   "raw": "{{gateway_url}}/api/users",
+                                   "host": [ "{{gateway_url}}" ],
+                                   "path": [ "api", "users" ]
+                              }
+                         }
+                    }
+               ]
+          },
+          {
+               "name": "🔍 6. Consultas",
+               "item": [
+                    {
+                         "name": "6.1 Listar todos los usuarios",
+                         "request": {
+                              "method": "GET",
+                              "header": [
+                                   { "key": "Authorization", "value": "Bearer {{access_token}}" }
+                              ],
+                              "url": {
+                                   "raw": "{{gateway_url}}/api/users",
+                                   "host": [ "{{gateway_url}}" ],
+                                   "path": [ "api", "users" ]
+                              }
+                         }
+                    },
+                    {
+                         "name": "6.2 Buscar por ID (Director)",
+                         "request": {
+                              "method": "GET",
+                              "header": [
+                                   { "key": "Authorization", "value": "Bearer {{access_token}}" }
+                              ],
+                              "url": {
+                                   "raw": "{{gateway_url}}/api/users/{{director_id}}",
+                                   "host": [ "{{gateway_url}}" ],
+                                   "path": [ "api", "users", "{{director_id}}" ]
+                              }
+                         }
+                    },
+                    {
+                         "name": "6.3 Usuarios por estado ACTIVE",
+                         "request": {
+                              "method": "GET",
+                              "header": [
+                                   { "key": "Authorization", "value": "Bearer {{access_token}}" }
+                              ],
+                              "url": {
+                                   "raw": "{{gateway_url}}/api/users/status/ACTIVE",
+                                   "host": [ "{{gateway_url}}" ],
+                                   "path": [ "api", "users", "status", "ACTIVE" ]
+                              }
+                         }
+                    },
+                    {
+                         "name": "6.4 Docentes activos",
+                         "request": {
+                              "method": "GET",
+                              "header": [
+                                   { "key": "Authorization", "value": "Bearer {{access_token}}" }
+                              ],
+                              "url": {
+                                   "raw": "{{gateway_url}}/api/users/role/DOCENTE/status/ACTIVE",
+                                   "host": [ "{{gateway_url}}" ],
+                                   "path": [ "api", "users", "role", "DOCENTE", "status", "ACTIVE" ]
+                              }
+                         }
+                    },
+                    {
+                         "name": "6.5 Usuarios por institución",
+                         "request": {
+                              "method": "GET",
+                              "header": [
+                                   { "key": "Authorization", "value": "Bearer {{access_token}}" }
+                              ],
+                              "url": {
+                                   "raw": "{{gateway_url}}/api/users/institution/{{institution_id}}",
+                                   "host": [ "{{gateway_url}}" ],
+                                   "path": [ "api", "users", "institution", "{{institution_id}}" ]
+                              }
+                         }
+                    },
+                    {
+                         "name": "6.6 Padres activos",
+                         "request": {
+                              "method": "GET",
+                              "header": [
+                                   { "key": "Authorization", "value": "Bearer {{access_token}}" }
+                              ],
+                              "url": {
+                                   "raw": "{{gateway_url}}/api/users/role/PADRE/status/ACTIVE",
+                                   "host": [ "{{gateway_url}}" ],
+                                   "path": [ "api", "users", "role", "PADRE", "status", "ACTIVE" ]
+                              }
+                         }
+                    }
+               ]
+          },
+          {
+               "name": "✏️ 7. Actualizar y gestionar",
+               "item": [
+                    {
+                         "name": "7.1 Actualizar Director (cambiar teléfono)",
+                         "request": {
+                              "method": "PUT",
+                              "header": [
+                                   { "key": "Content-Type", "value": "application/json" },
+                                   { "key": "Authorization", "value": "Bearer {{access_token}}" }
+                              ],
+                              "body": {
+                                   "mode": "raw",
+                                   "raw": "{\n    \"phone\": \"999111222\",\n    \"address\": \"Av. Nueva Dirección 999, Lima\"\n}"
+                              },
+                              "url": {
+                                   "raw": "{{gateway_url}}/api/users/{{director_id}}",
+                                   "host": [ "{{gateway_url}}" ],
+                                   "path": [ "api", "users", "{{director_id}}" ]
+                              }
+                         }
+                    },
+                    {
+                         "name": "7.2 Eliminar (soft delete) Docente 1",
+                         "request": {
+                              "method": "DELETE",
+                              "header": [
+                                   { "key": "Authorization", "value": "Bearer {{access_token}}" }
+                              ],
+                              "url": {
+                                   "raw": "{{gateway_url}}/api/users/{{docente1_id}}",
+                                   "host": [ "{{gateway_url}}" ],
+                                   "path": [ "api", "users", "{{docente1_id}}" ]
+                              }
+                         }
+                    },
+                    {
+                         "name": "7.3 Usuarios INACTIVE",
+                         "request": {
+                              "method": "GET",
+                              "header": [
+                                   { "key": "Authorization", "value": "Bearer {{access_token}}" }
+                              ],
+                              "url": {
+                                   "raw": "{{gateway_url}}/api/users/status/INACTIVE",
+                                   "host": [ "{{gateway_url}}" ],
+                                   "path": [ "api", "users", "status", "INACTIVE" ]
+                              }
+                         }
+                    },
+                    {
+                         "name": "7.4 Restaurar Docente 1",
+                         "request": {
+                              "method": "PATCH",
+                              "header": [
+                                   { "key": "Authorization", "value": "Bearer {{access_token}}" }
+                              ],
+                              "url": {
+                                   "raw": "{{gateway_url}}/api/users/{{docente1_id}}/restore",
+                                   "host": [ "{{gateway_url}}" ],
+                                   "path": [ "api", "users", "{{docente1_id}}", "restore" ]
+                              }
+                         }
+                    }
+               ]
+          },
+          {
+               "name": "🏥 8. Health & Actuator",
+               "item": [
+                    {
+                         "name": "8.1 Gateway Health",
+                         "request": {
+                              "method": "GET",
+                              "url": {
+                                   "raw": "{{gateway_url}}/actuator/health",
+                                   "host": [ "{{gateway_url}}" ],
+                                   "path": [ "actuator", "health" ]
+                              }
+                         }
+                    },
+                    {
+                         "name": "8.2 Gateway Routes",
+                         "request": {
+                              "method": "GET",
+                              "url": {
+                                   "raw": "{{gateway_url}}/actuator/gateway/routes",
+                                   "host": [ "{{gateway_url}}" ],
+                                   "path": [ "actuator", "gateway", "routes" ]
+                              }
+                         }
+                    },
+                    {
+                         "name": "8.3 Users MS Health (directo)",
+                         "request": {
+                              "method": "GET",
+                              "url": {
+                                   "raw": "{{users_direct_url}}/actuator/health",
+                                   "host": [ "{{users_direct_url}}" ],
+                                   "path": [ "actuator", "health" ]
+                              }
+                         }
+                    }
+               ]
+          }
+     ]
+}

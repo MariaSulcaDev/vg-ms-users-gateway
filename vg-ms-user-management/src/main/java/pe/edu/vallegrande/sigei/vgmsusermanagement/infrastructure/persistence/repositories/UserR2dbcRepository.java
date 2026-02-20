@@ -21,4 +21,6 @@ public interface UserR2dbcRepository extends ReactiveCrudRepository<UserEntity, 
 
     @Query("SELECT COUNT(*) > 0 FROM users WHERE document_number = :documentNumber AND id != :id")
     Mono<Boolean> existsByDocumentNumberAndIdNot(String documentNumber, String id);
+
+    Mono<Boolean> existsByUserName(String userName);
 }

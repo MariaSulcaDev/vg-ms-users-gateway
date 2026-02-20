@@ -1,55 +1,62 @@
 server:
-  port: ${SERVER_PORT:9083}
-  forward-headers-strategy: framework
+     port: ${SERVER_PORT:9083}
+     forward-headers-strategy: framework
+     profile: ${SPRING_PROFILES_ACTIVE:dev}
 
 spring:
-  application:
-    name: vg-ms-users-management
+     application:
+          name: vg-ms-users-management
 
-  r2dbc:
-    url: r2dbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:sigei_users}
-    username: ${DB_USERNAME:postgres}
-    password: ${DB_PASSWORD:postgres}
-    pool:
-      initial-size: 5
-      max-size: 20
-      max-idle-time: 30m
+     r2dbc:
+          url: r2dbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:sigei_users}
+          username: ${DB_USERNAME:postgres}
+          password: ${DB_PASSWORD:postgres}
+          pool:
+               initial-size: 5
+               max-size: 20
+               max-idle-time: 30m
 
-  flyway:
-    enabled: true
-    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:sigei_users}
-    user: ${DB_USERNAME:postgres}
-    password: ${DB_PASSWORD:postgres}
-    locations: classpath:db/migration
-    baseline-on-migrate: true
+     flyway:
+          enabled: true
+          url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:sigei_users}
+          user: ${DB_USERNAME:postgres}
+          password: ${DB_PASSWORD:postgres}
+          locations: classpath:db/migration
+          baseline-on-migrate: true
 
-  rabbitmq:
-    host: ${RABBITMQ_HOST:localhost}
-    port: ${RABBITMQ_PORT:5672}
-    username: ${RABBITMQ_USERNAME:guest}
-    password: ${RABBITMQ_PASSWORD:guest}
+     rabbitmq:
+          host: ${RABBITMQ_HOST:localhost}
+          port: ${RABBITMQ_PORT:5672}
+          username: ${RABBITMQ_USERNAME:guest}
+          password: ${RABBITMQ_PASSWORD:guest}
 
 springdoc:
-  api-docs:
-    enabled: true
-    path: /v3/api-docs
-  swagger-ui:
-    enabled: true
-    path: /swagger-ui/index.html
+     api-docs:
+          enabled: true
+          path: /v3/api-docs
+     swagger-ui:
+          enabled: true
+          path: /swagger-ui/index.html
 
 keycloak:
-  admin:
-    server-url: ${KEYCLOAK_SERVER_URL:http://localhost:8080}
-    realm: ${KEYCLOAK_REALM:sigei}
-    client-id: ${KEYCLOAK_ADMIN_CLIENT_ID:sigei-gateway}
-    client-secret: ${KEYCLOAK_ADMIN_CLIENT_SECRET:sigei-gateway}
+     admin:
+          server-url: ${KEYCLOAK_SERVER_URL:http://localhost:8080}
+          realm: ${KEYCLOAK_REALM:sigei}
+          client-id: ${KEYCLOAK_ADMIN_CLIENT_ID:sigei-gateway}
+          client-secret: ${KEYCLOAK_ADMIN_CLIENT_SECRET:ANuMYrY1GAbtofyQoR8uTUsjJsNAqpa1}
 
-services:
-  institution:
-    url: ${INSTITUTION_SERVICE_URL:http://localhost:9084}
+# services:
+#      institution:
+#           url: ${INSTITUTION_SERVICE_URL:http://localhost:9084}
 
 logging:
-  level:
-    pe.edu.vallegrande.sigei.users: INFO
-    org.springframework.r2dbc: DEBUG
-    io.r2dbc.postgresql: DEBUG
+     pattern:
+          console: "%d{HH:mm:ss.SSS} %highlight(%-5level) [%cyan(%logger{20})] %msg%n"
+     level:
+          root: INFO
+          pe.edu.vallegrande.sigei: INFO
+          org.springframework.r2dbc: WARN
+          io.r2dbc.postgresql: WARN
+          org.springframework.security: WARN
+          org.flywaydb: INFO
+          io.github.resilience4j: INFO

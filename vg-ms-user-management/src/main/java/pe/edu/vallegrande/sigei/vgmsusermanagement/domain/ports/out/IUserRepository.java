@@ -22,4 +22,6 @@ public interface IUserRepository {
     Mono<Boolean> existsByDocumentNumber(String documentNumber);
 
     Mono<Boolean> existsByDocumentNumberAndIdNot(String documentNumber, String id);
+
+    Mono<Boolean> existsByUserName(String userName);
 }

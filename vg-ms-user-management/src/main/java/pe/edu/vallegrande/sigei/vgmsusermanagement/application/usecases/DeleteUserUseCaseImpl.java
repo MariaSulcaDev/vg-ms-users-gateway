@@ -3,6 +3,7 @@ package pe.edu.vallegrande.sigei.vgmsusermanagement.application.usecases;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import pe.edu.vallegrande.sigei.vgmsusermanagement.domain.exceptions.UserNotFoundException;
+import pe.edu.vallegrande.sigei.vgmsusermanagement.domain.models.User;
 import pe.edu.vallegrande.sigei.vgmsusermanagement.domain.models.vo.UserStatus;
 import pe.edu.vallegrande.sigei.vgmsusermanagement.domain.ports.in.IDeleteUserUseCase;
 import pe.edu.vallegrande.sigei.vgmsusermanagement.domain.ports.out.IUserEventPublisher;
@@ -21,13 +22,13 @@ public class DeleteUserUseCaseImpl implements IDeleteUserUseCase {
     @Override
     public Mono<User> execute(String id) {
         return userRepository.findById(id)
-            .switchIfEmpty(Mono.error(new UserNotFoundException(id)))
-            .flatMap(user -> {
-                user.setStatus(UserStatus.INACTIVE);
-                user.setUpdatedAt(LocalDateTime.now());
-                return userRepository.save(user);
-            })
-            .flatMap(user -> eventPublisher.publishUserDeactivated(user, "Eliminación lógica")
-                .thenReturn(user));
+                .switchIfEmpty(Mono.error(new UserNotFoundException(id)))
+                .flatMap(user -> {
+                    user.setStatus(UserStatus.INACTIVE);
+                    user.setUpdatedAt(LocalDateTime.now());
+                    return userRepository.save(user);
+                })
+                .flatMap(user -> eventPublisher.publishUserDeactivated(user, "Eliminación lógica")
+                        .thenReturn(user));
     }
 }

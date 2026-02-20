@@ -21,37 +21,37 @@ public class UserRepositoryImpl implements IUserRepository {
     @Override
     public Mono<User> save(User user) {
         return r2dbcRepository.save(mapper.toEntity(user))
-            .map(mapper::toDomain);
+                .map(mapper::toDomain);
     }
 
     @Override
     public Mono<User> findById(String id) {
         return r2dbcRepository.findById(id)
-            .map(mapper::toDomain);
+                .map(mapper::toDomain);
     }
 
     @Override
     public Flux<User> findAll() {
         return r2dbcRepository.findAll()
-            .map(mapper::toDomain);
+                .map(mapper::toDomain);
     }
 
     @Override
     public Flux<User> findByStatus(UserStatus status) {
         return r2dbcRepository.findByStatus(status.name())
-            .map(mapper::toDomain);
+                .map(mapper::toDomain);
     }
 
     @Override
     public Flux<User> findByRoleAndStatus(UserRole role, UserStatus status) {
         return r2dbcRepository.findByRoleAndStatus(role.name(), status.name())
-            .map(mapper::toDomain);
+                .map(mapper::toDomain);
     }
 
     @Override
     public Flux<User> findByInstitutionId(String institutionId) {
         return r2dbcRepository.findByInstitutionId(institutionId)
-            .map(mapper::toDomain);
+                .map(mapper::toDomain);
     }
 
     @Override
@@ -62,5 +62,10 @@ public class UserRepositoryImpl implements IUserRepository {
     @Override
     public Mono<Boolean> existsByDocumentNumberAndIdNot(String documentNumber, String id) {
         return r2dbcRepository.existsByDocumentNumberAndIdNot(documentNumber, id);
+    }
+
+    @Override
+    public Mono<Boolean> existsByUserName(String userName) {
+        return r2dbcRepository.existsByUserName(userName);
     }
 }
